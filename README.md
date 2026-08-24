@@ -19,46 +19,4 @@ An automated API-to-database integration and governance utility built with **Pos
 ├── enterprise-inventory-api.postman_collection.json    # Main Postman collection with pre-request auth & test-script sanitization
 └── README.md                                           # Project documentation
 
-
-## Getting Started
-
-### Prerequisites
-* **[Postman](https://www.postman.com/) (Desktop App or Web)
-* A backend target (such as a Supabase project or a mock server) configured with matching API routes and database tables.
-
-### Environment Variables Setup
-To run this collection successfully, configure the following variables in your Postman Environment:
-
-| Variable | Description |
-| :--- | :--- |
-| `supa_url` | Your target API base URL |
-| `supa_anon_key` | Your public API key or anon token |
-| `user_email` | Test user email for automated auth refreshing |
-| `user_password` | Test user password |
-| `jwt_token` | Automatically populated/refreshed by the pre-request script |
-| `token_expiry` | Epoch timestamp tracking active token expiration |
-
-### Import & Execution
-1. Download or clone this repository.
-2. Open Postman and click **Import**, then select `enterprise-inventory-api.postman_collection.json`.
-3. Link your active Postman Environment containing the variables listed above.
-4. Run requests individually or execute the collection via the Postman Collection Runner to trigger automated token refreshing and response sanitization.
-
----
-
-## Technical Highlights
-
-The pre-request script handles authentication validation cleanly before any network call is dispatched:
-
-```javascript
-if (!userJwt || (tokenExpiry - currentTime) < 300) {
-    console.log("Token expired or missing. Fetching new token...");
-    pm.sendRequest({
-        url: supaUrl + "/auth/v1/token?grant_type=password",
-        method: 'POST',
-        header: { 'Content-Type': 'application/json', 'apikey': supaKey },
-        body: { mode: 'raw', raw: JSON.stringify({ email: userEmail, password: userPassword }) }
-    }, function (err, res) {
-        // Sets new JWT environment variables upon successful auth
-    });
-}
+Getting StartedPrerequisitesPostman (Desktop App or Web)A backend target (such as a Supabase project or a mock server) configured with matching API routes and database tables.Environment Variables SetupTo run this collection successfully, configure the following variables in your Postman Environment:VariableDescriptionsupa_urlYour target API base URLsupa_anon_keyYour public API key or anon tokenuser_emailTest user email for automated auth refreshinguser_passwordTest user passwordjwt_tokenAutomatically populated/refreshed by the pre-request scripttoken_expiryEpoch timestamp tracking active token expirationImport & ExecutionDownload or clone this repository.Open Postman and click Import, then select enterprise-inventory-api.postman_collection.json.Link your active Postman Environment containing the variables listed above.Run requests individually or execute the collection via the Postman Collection Runner to trigger automated token refreshing and response sanitization.Technical HighlightsThe pre-request script handles authentication validation cleanly before any network call is dispatched:
