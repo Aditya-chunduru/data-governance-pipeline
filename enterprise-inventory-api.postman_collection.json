@@ -1,0 +1,159 @@
+{
+  "info": {
+    "_postman_id": "b231e66b-4251-403e-af90-07a743928f6d",
+    "name": "enterprise-inventory-api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "56012449",
+    "_collection_link": "https://go.postman.co/collection/56012449-b231e66b-4251-403e-af90-07a743928f6d?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "New Request",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "try {\r",
+              "    const responseJson = pm.response.json();\r",
+              "    \r",
+              "    // Target columns to scrub based on your tables\r",
+              "    const targetFields = [\"user_id\", \"profiles_id\", \"id\"];\r",
+              "    \r",
+              "    function sanitize(obj) {\r",
+              "        if (!obj || typeof obj !== \"object\") return obj;\r",
+              "        if (Array.isArray(obj)) return obj.map(item => sanitize(item));\r",
+              "        \r",
+              "        let clone = {};\r",
+              "        for (let key of Object.keys(obj)) {\r",
+              "            // Check if key matches your sensitive fields (case-insensitive)\r",
+              "            if (targetFields.includes(key.toLowerCase())) {\r",
+              "                clone[key] = \"[MASKED]\";\r",
+              "            } else {\r",
+              "                clone[key] = sanitize(obj[key]);\r",
+              "            }\r",
+              "        }\r",
+              "        return clone;\r",
+              "    }\r",
+              "\r",
+              "    const cleanOutput = sanitize(responseJson);\r",
+              "    \r",
+              "    console.log(\"=== SANITIZED RESPONSE PREVIEW ===\");\r",
+              "    console.log(JSON.stringify(cleanOutput, null, 2));\r",
+              "\r",
+              "    pm.test(\"Response status is 200\", () => {\r",
+              "        pm.response.to.have.status(200);\r",
+              "    });\r",
+              "\r",
+              "} catch (e) {\r",
+              "    console.log(\"Could not parse response as JSON for masking.\");\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{supa_anon_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Prefer",
+            "value": "return=representation"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n\"product_id\": \"51376d31-77f0-4b5c-9286-b7dd98396cb1\",\r\n  \"quantity\": 2\r\n}"
+        },
+        "url": {
+          "raw": "{{supa_url}}/rest/v1/safe_cart_items",
+          "host": [
+            "{{supa_url}}"
+          ],
+          "path": [
+            "rest",
+            "v1",
+            "safe_cart_items"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          "const currentTime = Math.floor(Date.now() / 1000);\r",
+          "const tokenExpiry = pm.environment.get(\"token_expiry\") || 0;\r",
+          "const userJwt = pm.environment.get(\"jwt_token\");\r",
+          "\r",
+          "const supaUrl = pm.environment.get(\"supa_url\");\r",
+          "const supaKey = pm.environment.get(\"supa_anon_key\");\r",
+          "const userEmail = pm.environment.get(\"user_email\");\r",
+          "const userPassword = pm.environment.get(\"user_password\");\r",
+          "\r",
+          "console.log(\"Checking auth for:\", userEmail);\r",
+          "\r",
+          "if (!userJwt || (tokenExpiry - currentTime) < 300) {\r",
+          "    console.log(\"Token expired or missing. Fetching new token...\");\r",
+          "\r",
+          "    pm.sendRequest({\r",
+          "        url: supaUrl + \"/auth/v1/token?grant_type=password\",\r",
+          "        method: 'POST',\r",
+          "        header: {\r",
+          "            'Content-Type': 'application/json',\r",
+          "            'apikey': supaKey\r",
+          "        },\r",
+          "        body: {\r",
+          "            mode: 'raw',\r",
+          "            raw: JSON.stringify({\r",
+          "                email: userEmail,\r",
+          "                password: userPassword\r",
+          "            })\r",
+          "        }\r",
+          "    }, function (err, res) {\r",
+          "        if (!err && res.code === 200) {\r",
+          "            const data = res.json();\r",
+          "            pm.environment.set(\"jwt_token\", data.access_token);\r",
+          "            pm.environment.set(\"token_expiry\", currentTime + data.expires_in);\r",
+          "            console.log(\"Auto-refresh successful! New token acquired.\");\r",
+          "        } else {\r",
+          "            const errMsg = err ? err.message : (res ? res.text() : \"Unknown error\");\r",
+          "            console.error(\"Auto-refresh failed:\", errMsg);\r",
+          "        }\r",
+          "    });\r",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+}
