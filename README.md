@@ -23,7 +23,7 @@ An automated API-to-database integration and governance utility built with **Pos
 ## Getting Started
 
 ### Prerequisites
-* [Postman](https://www.postman.com/) (Desktop App or Web)
+* **[Postman](https://www.postman.com/) (Desktop App or Web)
 * A backend target (such as a Supabase project or a mock server) configured with matching API routes and database tables.
 
 ### Environment Variables Setup
