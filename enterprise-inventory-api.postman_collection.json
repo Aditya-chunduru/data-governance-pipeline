@@ -101,41 +101,65 @@
         "packages": {},
         "requests": {},
         "exec": [
+          "// STEP 1: Retrieve current timestamp and divides by 1000 to convert milliseconds into seconds for unix time matching standard unix timestamps.",
           "const currentTime = Math.floor(Date.now() / 1000);\r",
           "const tokenExpiry = pm.environment.get(\"token_expiry\") || 0;\r",
           "const userJwt = pm.environment.get(\"jwt_token\");\r",
           "\r",
+
+          "// STEP 2: Variable declarations",
           "const supaUrl = pm.environment.get(\"supa_url\");\r",
           "const supaKey = pm.environment.get(\"supa_anon_key\");\r",
           "const userEmail = pm.environment.get(\"user_email\");\r",
           "const userPassword = pm.environment.get(\"user_password\");\r",
           "\r",
+          "// STEP 3: Does the userEmail exist?",
           "console.log(\"Checking auth for:\", userEmail);\r",
           "\r",
+          "// STEP 4: Checks if token is missing or if token expiration time is less than 300 seconds or 5 minutes before executing further.",
           "if (!userJwt || (tokenExpiry - currentTime) < 300) {\r",
           "    console.log(\"Token expired or missing. Fetching new token...\");\r",
           "\r",
+          
+         "// STEP 5: Request a new auth token using supabase endpoint and POST method",
           "    pm.sendRequest({\r",
           "        url: supaUrl + \"/auth/v1/token?grant_type=password\",\r",
           "        method: 'POST',\r",
+
+          "//Pass required headers including content type and anonymous api key. ",
           "        header: {\r",
           "            'Content-Type': 'application/json',\r",
           "            'apikey': supaKey\r",
           "        },\r",
+          
+          "// STEP 6: Define body format as raw text",
           "        body: {\r",
           "            mode: 'raw',\r",
+
+          "// Sterialize the Javascript email/password object into JSON string",
           "            raw: JSON.stringify({\r",
           "                email: userEmail,\r",
           "                password: userPassword\r",
           "            })\r",
+          
           "        }\r",
+
+          "// STEP 7 Handle asynchronous response from the supabase auth endpoint",
           "    }, function (err, res) {\r",
+          
+                  "//Check if request succeeded without network errors and returned 200 ok status",
           "        if (!err && res.code === 200) {\r",
+          
+                    "//Parse the response body into a usable JSON object",
           "            const data = res.json();\r",
+          
+                      "// Save the new JWT token and calculate absolute expiration time in environment variables",
           "            pm.environment.set(\"jwt_token\", data.access_token);\r",
           "            pm.environment.set(\"token_expiry\", currentTime + data.expires_in);\r",
           "            console.log(\"Auto-refresh successful! New token acquired.\");\r",
           "        } else {\r",
+          
+                      "//Handle errors gracefully by capturing network failures, response texts, or fallbacks",
           "            const errMsg = err ? err.message : (res ? res.text() : \"Unknown error\");\r",
           "            console.error(\"Auto-refresh failed:\", errMsg);\r",
           "        }\r",
