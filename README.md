@@ -145,3 +145,19 @@ GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.your_table_name TO authenticated;
 
 ```
+
+
+
+
+### Q: Why use Content-Type: application/json instead of form-urlencoded or raw text?
+
+Answer: Our payload requires structured data types—like nested objects and booleans—that raw text or form formats can't preserve. It establishes a strict contract via HTTP headers so the server's body parser knows how to deserialize incoming bytes before handling authentication.
+
+### Q: What is the purpose of setting body: { mode: 'raw', raw: JSON.stringify(...) }?
+
+    
+Answer: Network protocols require text or byte streams. JSON.stringify() serializes our JavaScript object into a flat string, and mode: 'raw' forces Postman to deliver that exact string into the request body without altering, escaping, or form-encoding it.
+
+### Q: Why implement a 5-minute pre-request buffer for JWT expiration?
+
+Answer: Checking (tokenExpiry - currentTime) < 300 proactively refreshes the token before it officially dies, preventing race conditions or mid-test authentication failures during automated collection runs.
