@@ -1,0 +1,38 @@
+name: Postman API Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Newman
+        run: npm install -g newman
+
+      - name: Run Postman Collection
+        run: |
+          echo "Listing all files in workspace:"
+          find . -type f
+          
+          COLLECTION_FILE=$(find . -name "*.json" ! -name "*environment*" | head -n 1)
+          echo "Found collection at: $COLLECTION_FILE"
+          
+          newman run "$COLLECTION_FILE" \
+            --env-var "supa_url=${{ secrets.SUPA_URL }}" \
+            --env-var "supa_anon_key=${{ secrets.SUPA_ANON_KEY }}" \
+            --env-var "user_email=${{ secrets.USER_EMAIL }}" \
+            --env-var "user_password=${{ secrets.USER_PASSWORD }}" \
+            --reporters cli
