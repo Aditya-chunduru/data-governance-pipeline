@@ -3,212 +3,127 @@
     "_postman_id": "7e317aca-5290-48ba-86bb-d62ac411bb1a",
     "name": "enterprise-inventory-api",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "56012449",
-    "_collection_link": "https://go.postman.co/collection/56012449-7e317aca-5290-48ba-86bb-d62ac411bb1a?source=collection_link"
+    "_exporter_id": "56012449"
   },
   "item": [
-    {
-      "name": "Business Endpoint",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "try {\r",
-              "    const responseJson = pm.response.json();\r",
-              "    \r",
-              "    // Target columns to scrub based on your tables\r",
-              "    const targetFields = [\"user_id\", \"profiles_id\", \"id\"];\r",
-              "    \r",
-              "    function sanitize(obj) {\r",
-              "        if (!obj || typeof obj !== \"object\") return obj;\r",
-              "        if (Array.isArray(obj)) return obj.map(item => sanitize(item));\r",
-              "        \r",
-              "        let clone = {};\r",
-              "        for (let key of Object.keys(obj)) {\r",
-              "            // Check if key matches your sensitive fields (case-insensitive)\r",
-              "            if (targetFields.includes(key.toLowerCase())) {\r",
-              "                clone[key] = \"[MASKED]\";\r",
-              "            } else {\r",
-              "                clone[key] = sanitize(obj[key]);\r",
-              "            }\r",
-              "        }\r",
-              "        return clone;\r",
-              "    }\r",
-              "\r",
-              "    const cleanOutput = sanitize(responseJson);\r",
-              "    \r",
-              "    console.log(\"=== SANITIZED RESPONSE PREVIEW ===\");\r",
-              "    console.log(JSON.stringify(cleanOutput, null, 2));\r",
-              "\r",
-              "    pm.test(\"Response status is 200\", () => {\r",
-              "        pm.response.to.have.status(200);\r",
-              "    });\r",
-              "\r",
-              "} catch (e) {\r",
-              "    console.log(\"Could not parse response as JSON for masking.\");\r",
-              "}"
-            ],
-            "type": "text/javascript",
-            "packages": {},
-            "requests": {}
-          }
-        }
-      ],
-      "protocolProfileBehavior": {
-        "disableBodyPruning": true
-      },
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "apikey",
-            "value": "{{supa_anon_key}}"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{jwt_token}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          },
-          {
-            "key": "Prefer",
-            "value": "return=representation"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": ""
-        },
-        "url": {
-          "raw": "{{supa_url}}/rest/v1/orders",
-          "host": [
-            "{{supa_url}}"
-          ],
-          "path": [
-            "rest",
-            "v1",
-            "orders"
-          ]
-        }
-      },
-      "response": []
-    },
     {
       "name": "Get Auth Token",
       "event": [
         {
           "listen": "test",
           "script": {
-            "exec": [
-              "try {\r",
-              "    const responseJson = pm.response.json();\r",
-              "    \r",
-              "    if (pm.response.code === 200 && responseJson.access_token) {\r",
-              "        pm.environment.set(\"jwt_token\", responseJson.access_token);\r",
-              "        \r",
-              "        if (responseJson.expires_in) {\r",
-              "            const currentTime = Math.floor(Date.now() / 1000);\r",
-              "            pm.environment.set(\"token_expiry\", currentTime + responseJson.expires_in);\r",
-              "        }\r",
-              "        \r",
-              "        console.log(\"Auth success: JWT token and expiration cached.\");\r",
-              "    } else {\r",
-              "        console.error(\"Auth failed: Response missing access token or invalid status code.\");\r",
-              "    }\r",
-              "\r",
-              "    pm.test(\"Auth status is 200\", () => {\r",
-              "        pm.response.to.have.status(200);\r",
-              "    });\r",
-              "\r",
-              "} catch (e) {\r",
-              "    console.error(\"Could not parse auth response as JSON.\");\r",
-              "}"
-            ],
             "type": "text/javascript",
-            "packages": {},
-            "requests": {}
+            "exec": [
+              "try {",
+              "    const responseJson = pm.response.json();",
+              "    ",
+              "    if (pm.response.code === 200 && responseJson.access_token) {",
+              "        pm.environment.set(\"jwt_token\", responseJson.access_token);",
+              "        ",
+              "        if (responseJson.expires_in) {",
+              "            const currentTime = Math.floor(Date.now() / 1000);",
+              "            pm.environment.set(\"token_expiry\", currentTime + responseJson.expires_in);",
+              "        }",
+              "        ",
+              "        console.log(\"Auth success: JWT token and expiration cached.\");",
+              "    } else {",
+              "        console.error(\"Auth failed: Response missing access token or invalid status code.\");",
+              "    }",
+              "",
+              "    pm.test(\"Auth status is 200\", () => {",
+              "        pm.response.to.have.status(200);",
+              "    });",
+              "",
+              "} catch (e) {",
+              "    console.error(\"Could not parse auth response as JSON.\");",
+              "}"
+            ]
           }
         }
       ],
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "apikey",
-            "value": "{{supa_anon_key}}",
-            "type": "text"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{user_jwt}}",
-            "type": "text"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          },
-          {
-            "key": "Prefer",
-            "value": "return=representation",
-            "type": "text"
-          }
+          { "key": "apikey", "value": "{{supa_anon_key}}" },
+          { "key": "Authorization", "value": "Bearer {{user_jwt}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Prefer", "value": "return=representation" }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"email\": \"{{user_email}}\",\r\n    \"password\": \"{{user_password}}\"\r\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
+          "raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
         "url": {
           "raw": "{{supa_url}}/auth/v1/token?grant_type=password",
-          "host": [
-            "{{supa_url}}"
-          ],
-          "path": [
-            "auth",
-            "v1",
-            "token"
-          ],
-          "query": [
-            {
-              "key": "grant_type",
-              "value": "password"
-            }
-          ]
+          "host": ["{{supa_url}}"],
+          "path": ["auth", "v1", "token"],
+          "query": [{ "key": "grant_type", "value": "password" }]
         }
       },
       "response": []
-    }
-  ],
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
     },
     {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
+      "name": "Business Endpoint",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "    const responseJson = pm.response.json();",
+              "    ",
+              "    const targetFields = [\"user_id\", \"profiles_id\", \"id\"];",
+              "    ",
+              "    function sanitize(obj) {",
+              "        if (!obj || typeof obj !== \"object\") return obj;",
+              "        if (Array.isArray(obj)) return obj.map(item => sanitize(item));",
+              "        ",
+              "        let clone = {};",
+              "        for (let key of Object.keys(obj)) {",
+              "            if (targetFields.includes(key.toLowerCase())) {",
+              "                clone[key] = \"[MASKED]\";",
+              "            } else {",
+              "                clone[key] = sanitize(obj[key]);",
+              "            }",
+              "        }",
+              "        return clone;",
+              "    }",
+              "",
+              "    const cleanOutput = sanitize(responseJson);",
+              "    ",
+              "    console.log(\"=== SANITIZED RESPONSE PREVIEW ===\");",
+              "    console.log(JSON.stringify(cleanOutput, null, 2));",
+              "",
+              "    pm.test(\"Response status is 200\", () => {",
+              "        pm.response.to.have.status(200);",
+              "    });",
+              "",
+              "} catch (e) {",
+              "    console.log(\"Could not parse response as JSON for masking.\");",
+              "}"
+            ]
+          }
+        }
+      ],
+      "protocolProfileBehavior": { "disableBodyPruning": true },
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "apikey", "value": "{{supa_anon_key}}" },
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Prefer", "value": "return=representation" }
+        ],
+        "body": { "mode": "raw", "raw": "" },
+        "url": {
+          "raw": "{{supa_url}}/rest/v1/orders",
+          "host": ["{{supa_url}}"],
+          "path": ["rest", "v1", "orders"]
+        }
+      },
+      "response": []
     }
   ]
 }
