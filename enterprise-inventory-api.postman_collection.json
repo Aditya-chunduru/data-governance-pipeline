@@ -1,14 +1,14 @@
 {
   "info": {
-    "_postman_id": "b231e66b-4251-403e-af90-07a743928f6d",
+    "_postman_id": "7e317aca-5290-48ba-86bb-d62ac411bb1a",
     "name": "enterprise-inventory-api",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "56012449",
-    "_collection_link": "https://go.postman.co/collection/56012449-b231e66b-4251-403e-af90-07a743928f6d?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/56012449-7e317aca-5290-48ba-86bb-d62ac411bb1a?source=collection_link"
   },
   "item": [
     {
-      "name": "New Request",
+      "name": "Business Endpoint",
       "event": [
         {
           "listen": "test",
@@ -80,17 +80,107 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n\"product_id\": \"51376d31-77f0-4b5c-9286-b7dd98396cb1\",\r\n  \"quantity\": 2\r\n}"
+          "raw": ""
         },
         "url": {
-          "raw": "{{supa_url}}/rest/v1/safe_cart_items",
+          "raw": "{{supa_url}}/rest/v1/orders",
           "host": [
             "{{supa_url}}"
           ],
           "path": [
             "rest",
             "v1",
-            "safe_cart_items"
+            "orders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Auth Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "try {\r",
+              "    const responseJson = pm.response.json();\r",
+              "    \r",
+              "    if (pm.response.code === 200 && responseJson.access_token) {\r",
+              "        pm.environment.set(\"jwt_token\", responseJson.access_token);\r",
+              "        \r",
+              "        if (responseJson.expires_in) {\r",
+              "            const currentTime = Math.floor(Date.now() / 1000);\r",
+              "            pm.environment.set(\"token_expiry\", currentTime + responseJson.expires_in);\r",
+              "        }\r",
+              "        \r",
+              "        console.log(\"Auth success: JWT token and expiration cached.\");\r",
+              "    } else {\r",
+              "        console.error(\"Auth failed: Response missing access token or invalid status code.\");\r",
+              "    }\r",
+              "\r",
+              "    pm.test(\"Auth status is 200\", () => {\r",
+              "        pm.response.to.have.status(200);\r",
+              "    });\r",
+              "\r",
+              "} catch (e) {\r",
+              "    console.error(\"Could not parse auth response as JSON.\");\r",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "apikey",
+            "value": "{{supa_anon_key}}",
+            "type": "text"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{user_jwt}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "Prefer",
+            "value": "return=representation",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"{{user_email}}\",\r\n    \"password\": \"{{user_password}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{supa_url}}/auth/v1/token?grant_type=password",
+          "host": [
+            "{{supa_url}}"
+          ],
+          "path": [
+            "auth",
+            "v1",
+            "token"
+          ],
+          "query": [
+            {
+              "key": "grant_type",
+              "value": "password"
+            }
           ]
         }
       },
@@ -105,72 +195,7 @@
         "packages": {},
         "requests": {},
         "exec": [
-          "// STEP 1: Retrieve current timestamp and divides by 1000 to convert milliseconds into seconds for unix time matching standard unix timestamps.",
-          "const currentTime = Math.floor(Date.now() / 1000);\r",
-          "const tokenExpiry = pm.environment.get(\"token_expiry\") || 0;\r",
-          "const userJwt = pm.environment.get(\"jwt_token\");\r",
-          "\r",
-
-           "// STEP 2: Variable declarations",
-          "const supaUrl = pm.environment.get(\"supa_url\");\r",
-          "const supaKey = pm.environment.get(\"supa_anon_key\");\r",
-          "const userEmail = pm.environment.get(\"user_email\");\r",
-          "const userPassword = pm.environment.get(\"user_password\");\r",
-          "\r",
-
-          "// STEP 3: Does the userEmail exist?",
-          "console.log(\"Checking auth for:\", userEmail);\r",
-          "\r",
-
-          "// STEP 4: Checks if token is missing or if token expiration time is less than 300 seconds or 5 minutes before executing further.",
-          "if (!userJwt || (tokenExpiry - currentTime) < 300) {\r",
-          "    console.log(\"Token expired or missing. Fetching new token...\");\r",
-          "\r",
-
-          "// STEP 5: Request a new auth token using supabase endpoint and POST method",
-          "    pm.sendRequest({\r",
-          "        url: supaUrl + \"/auth/v1/token?grant_type=password\",\r",
-          "        method: 'POST',\r",
-
-          "//Pass required headers including content type and anonymous api key. ",
-          "        header: {\r",
-          "            'Content-Type': 'application/json',\r",
-          "            'apikey': supaKey\r",
-          "        },\r",
-
-           "// STEP 6: Define body format as raw text",
-          "        body: {\r",
-          "            mode: 'raw',\r",
-
-          "// Sterialize the Javascript email/password object into JSON string",
-          "            raw: JSON.stringify({\r",
-          "                email: userEmail,\r",
-          "                password: userPassword\r",
-          "            })\r",
-
-          
-          "        }\r",
-           "// STEP 7 Handle asynchronous response from the supabase auth endpoint",
-          "    }, function (err, res) {\r",
-          "//Check if request succeeded without network errors and returned 200 ok status",
-          "        if (!err && res.code === 200) {\r",
-
-           "//Parse the response body into a usable JSON object",
-          "            const data = res.json();\r",
-
-          
-             "// Save the new JWT token and calculate absolute expiration time in environment variables",
-          "            pm.environment.set(\"jwt_token\", data.access_token);\r",
-          "            pm.environment.set(\"token_expiry\", currentTime + data.expires_in);\r",
-          "            console.log(\"Auto-refresh successful! New token acquired.\");\r",
-          "        } else {\r",
-
-          "//Handle errors gracefully by capturing network failures, response texts, or fallbacks",
-          "            const errMsg = err ? err.message : (res ? res.text() : \"Unknown error\");\r",
-          "            console.error(\"Auto-refresh failed:\", errMsg);\r",
-          "        }\r",
-          "    });\r",
-          "}"
+          ""
         ]
       }
     },
