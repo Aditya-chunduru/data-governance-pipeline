@@ -81,36 +81,55 @@
           "script": {
             "type": "text/javascript",
             "exec": [
+
+              "// Wrap parsing and recursive masking in a try block to prevent runner crashes on unexpected non-JSON responses",
               "try {",
+              
+              "// Parse the incoming HTTP response body into a structured JavaScript object",
               "    const responseJson = pm.response.json();",
+              
               "    ",
+              "// Define sensitive identifiers that must be scrubbed for build log hygiene",
               "    const targetFields = [\"user_id\", \"profiles_id\", \"id\"];",
+              
               "    ",
+              "// Define a recursive helper function to walk through nested objects and arrays",
               "    function sanitize(obj) {",
+              
+              "       // Base case: return primitives or null/undefined as-is",
               "        if (!obj || typeof obj !== \"object\") return obj;",
+              
+              "        // If it's an array, process each item recursively",
               "        if (Array.isArray(obj)) return obj.map(item => sanitize(item));",
               "        ",
+              "        // Create a clean clone to avoid mutating the original response reference",
               "        let clone = {};",
               "        for (let key of Object.keys(obj)) {",
+              "            // Check if the key matches a sensitive target field case-insensitively",
               "            if (targetFields.includes(key.toLowerCase())) {",
               "                clone[key] = \"[MASKED]\";",
               "            } else {",
+              "                // Recursively traverse nested object properties",
               "                clone[key] = sanitize(obj[key]);",
               "            }",
               "        }",
               "        return clone;",
               "    }",
               "",
+              "    // Execute sanitization across the entire response payload tree",
               "    const cleanOutput = sanitize(responseJson);",
               "    ",
+              "    // Output the clean, redacted preview to the CI/CD console logs safely",
               "    console.log(\"=== SANITIZED RESPONSE PREVIEW ===\");",
               "    console.log(JSON.stringify(cleanOutput, null, 2));",
               "",
+              "    // Assert standard HTTP success for the business endpoint",
               "    pm.test(\"Response status is 200\", () => {",
               "        pm.response.to.have.status(200);",
               "    });",
               "",
               "} catch (e) {",
+              "    // Fallback error catcher if response body cannot be parsed as JSON",
               "    console.log(\"Could not parse response as JSON for masking.\");",
               "}"
             ]
