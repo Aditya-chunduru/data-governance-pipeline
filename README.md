@@ -44,23 +44,31 @@ To run this collection successfully, configure the following variables in your P
 The authentication test script captures the access token in its Test tab immediately upon a successful 200 OK response:
 
 ```javascript
+// Wrap parsing in a try block to prevent CI/CD runner crashes if the server returns non-JSON or gateway error pages
 try {
+// Convert the raw HTTP response body into a structured JavaScript object
     const responseJson = pm.response.json();
     
+ // Validate response code and verify token existence before caching
     if (pm.response.code === 200 && responseJson.access_token) {
         pm.environment.set("jwt_token", responseJson.access_token);
         
+        // Calculate absolute token expiration timestamp if provided
         if (responseJson.expires_in) {
             const currentTime = Math.floor(Date.now() / 1000);
             pm.environment.set("token_expiry", currentTime + responseJson.expires_in);
         }
         
         console.log("Auth success: JWT token and expiration cached.");
+    } else {
+        console.error("Auth failed: Response missing access token or invalid status code.");
     }
-    
+
+ // Assert successful HTTP status
     pm.test("Auth status is 200", () => {
         pm.response.to.have.status(200);
     });
+
 } catch (e) {
     console.error("Could not parse auth response as JSON.");
 }
